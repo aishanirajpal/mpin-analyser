@@ -2,9 +2,8 @@ import datetime
 import re
 
 def is_commonly_used(mpin: str, pin_length: int) -> bool:
-    """
-    Checks if a given MPIN is commonly used based on dynamic regex patterns.
-    """
+    #Checks if a given MPIN is commonly used based on dynamic regex patterns.
+
     if not mpin.isdigit() or len(mpin) != pin_length:
         return False
 
@@ -23,41 +22,58 @@ def is_commonly_used(mpin: str, pin_length: int) -> bool:
     if is_sequential_asc or is_sequential_desc:
         return True
 
-    # All odd or all even digits
-    if re.fullmatch(f"^[13579]{{{pin_length}}}$", mpin): # All odd
+    # All odd digits
+    if re.fullmatch(f"^[13579]{{{pin_length}}}$", mpin): 
         return True
-    if re.fullmatch(f"^[02468]{{{pin_length}}}$", mpin): # All even
+
+    # All even digits
+    if re.fullmatch(f"^[02468]{{{pin_length}}}$", mpin): 
         return True
 
     # Repeating sequences
     if pin_length == 4:
-        if re.fullmatch(r"^(\d{2})\1$", mpin): # e.g., 1212
+        if re.fullmatch(r"^(\d{2})\1$", mpin):
             return True
     elif pin_length == 6:
         if re.fullmatch(r"^(\d{2})\1{2}$", mpin) or re.fullmatch(r"^(\d{3})\1$", mpin): # e.g., 121212 or 123123
             return True
 
-    # Palindromic/Mirrored patterns
+    # Palindromic patterns
     if pin_length == 4:
-        if re.fullmatch(r"^(\d)(\d)\2\1$", mpin): # e.g., 1221
+        if re.fullmatch(r"^(\d)(\d)\2\1$", mpin): 
             return True
     elif pin_length == 6:
-        if re.fullmatch(r"^(\d)(\d)(\d)\3\2\1$", mpin): # e.g., 123321
+        if re.fullmatch(r"^(\d)(\d)(\d)\3\2\1$", mpin): 
             return True
 
-    # Consecutive repeating pairs (e.g., 1122, 223344)
+    # Consecutive repeating pairs
     if pin_length == 4:
-        if re.fullmatch(r"^(.)\1(.)\2$", mpin): # e.g., 1122
+        if re.fullmatch(r"^(.)\1(.)\2$", mpin): 
             return True
     elif pin_length == 6:
-        if re.fullmatch(r"^(.)\1(.)\2(.)\3$", mpin): # e.g., 112233
+        if re.fullmatch(r"^(.)\1(.)\2(.)\3$", mpin): 
+            return True
+
+    # Keyboard patterns
+    keyboard_patterns_4_digit = ["1470", "0741", "2580", "0852", "3690", "0963", # Vertical lines
+                                 "1234", "4321", "7890", "0987", # Horizontal lines
+                                 "1590", "0951", "3570", "0753"] # Diagonal lines
+    keyboard_patterns_6_digit = ["147258", "852741", "369258", "852963", # Combined vertical lines
+                                 "123456", "654321", "789456", "654987", # Longer horizontal lines
+                                 "159268", "862951", "357480", "084753"] # L-shaped
+
+    if pin_length == 4:
+        if mpin in keyboard_patterns_4_digit:
+            return True
+    elif pin_length == 6:
+        if mpin in keyboard_patterns_6_digit:
             return True
 
     return False
 
 def extract_date_patterns(date_str: str) -> list[str]:
     """
-    Extracts various 4-digit and 6-digit patterns from a date string (YYYY-MM-DD).
+    Extracts 4-digit and 6-digit patterns from a date string (YYYY-MM-DD).
     These patterns are designed to be directly usable as literal strings for regex matching.
     """
     if not date_str:
@@ -72,18 +88,20 @@ def extract_date_patterns(date_str: str) -> list[str]:
         patterns = []
 
         # 4-digit patterns
-        patterns.append(f"{month_str}{day_str}")  # MMDD
+        patterns.append(f"{month_str}{day_str}")  #MMDD
         patterns.append(f"{day_str}{month_str}")  # DDMM
         patterns.append(f"{year_str[2:]}{month_str}")  # YYMM
         patterns.append(f"{month_str}{year_str[2:]}")  # MMYY
-        patterns.append(year_str) # YYYY (4-digit)
-        patterns.append(year_str[2:] + year_str[2:]) # YY YY
+        patterns.append(f"{day_str}{year_str[2:]}") # DDYY
+        patterns.append(f"{year_str[2:]}{day_str}") # YYDD
+        patterns.append(year_str) # YYYY
+        patterns.append(year_str[2:] + year_str[2:]) # last two digits of year repeated twice
 
         # 6-digit patterns
         patterns.append(f"{month_str}{day_str}{year_str[2:]}") # MMDDYY
         patterns.append(f"{day_str}{month_str}{year_str[2:]}") # DDMMYY
-        patterns.append(year_str + month_str) # YYYYMM (6-digit)
-        patterns.append(year_str + day_str) # YYYYDD (6-digit)
+        patterns.append(year_str + month_str) # YYYYMM  
+        patterns.append(year_str + day_str) # YYYYDD
         patterns.append(f"{year_str[2:]}{month_str}{day_str}") # YYMMDD
         patterns.append(f"{month_str}{year_str[2:]}{day_str}") # MMYYDD
         patterns.append(f"{day_str}{year_str[2:]}{month_str}") # DDYYMM
@@ -92,10 +110,8 @@ def extract_date_patterns(date_str: str) -> list[str]:
     except ValueError:
         return []
 
-def analyze_mpin_strength(mpin: str, demographics: dict) -> dict:
-    """
-    Evaluates the security strength of an MPIN based on common usage and demographic data.
-    """
+def analyse_mpin_strength(mpin: str, demographics: dict) -> dict:
+#Evaluates the security strength of an MPIN based on common usage and demographic data.
     strength = "STRONG"
     reasons = []
     pin_length = len(mpin)
@@ -110,8 +126,6 @@ def analyze_mpin_strength(mpin: str, demographics: dict) -> dict:
         "dob_self": "DEMOGRAPHIC_DOB_SELF",
         "dob_spouse": "DEMOGRAPHIC_DOB_SPOUSE",
         "anniversary": "DEMOGRAPHIC_ANNIVERSARY",
-        "child_dob": "DEMOGRAPHIC_CHILD_DOB",
-        "pet_dob": "DEMOGRAPHIC_PET_DOB"
     }
 
     for field, reason_key in demographic_fields.items():
